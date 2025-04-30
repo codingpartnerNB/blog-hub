@@ -34,7 +34,9 @@ export function BlogProvider({ children }) {
 
     // Set up WebSocket connection
     // const socket = new WebSocket('ws://localhost:5000');
-    const socket = new WebSocket(`ws://${BACKEND_PATH.replace('http://', '')}`);
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const socket = new WebSocket(`${wsProtocol}${BACKEND_PATH.replace(/^https?:\/\//, '')}`);
+
 
     socket.onopen = () => {
       console.log('WebSocket connection established');
