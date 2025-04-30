@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -13,6 +13,48 @@ export function BlogProvider({ children }) {
   const [currentBlog, setCurrentBlog] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const BACKEND_PATH = import.meta.env.VITE_BACKEND_PATH || 'http://localhost:5000';
+
+  useEffect(() => {
+    // Fetch initial blogs
+    const fetchBlogs = async () => {
+      try {
+        setLoading(true);
+        const { data } = await axios.get('/api/blogs');
+        setBlogs(data);
+      } catch (error) {
+        console.error('Error fetching blogs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBlogs();
+
+    // Set up WebSocket connection
+    // const socket = new WebSocket('ws://localhost:5000');
+    const socket = new WebSocket(`ws://${BACKEND_PATH.replace('http://', '')}`);
+
+    socket.onopen = () => {
+      console.log('WebSocket connection established');
+    };
+
+    socket.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      if (message.type === 'NEW_POST') {
+        setBlogs((prevBlogs) => [message.payload, ...prevBlogs]);
+      }
+    };
+
+    socket.onclose = () => {
+      console.log('WebSocket connection closed');
+    };
+
+    return () => {
+      socket.close();
+    };
+  }, []);
 
   // Memoized fetch functions
   const fetchBlogs = useCallback(async () => {

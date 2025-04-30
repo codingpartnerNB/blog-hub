@@ -1,6 +1,10 @@
 {
     "rewrites": [
         {
+            "source": "/socket.io/:path*",
+            "destination": "https://blog-hub-cvm1.onrender.com/socket.io/:path*"
+          },          
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }

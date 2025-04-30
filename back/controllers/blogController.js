@@ -1,6 +1,7 @@
 import Blog from '../models/Blog.js';
 import { uploadImage } from '../utils/cloudinary.js';
 import fs from 'fs';
+import { broadcastNewPost } from '../index.js';
 
 // @desc    Create a new blog
 // @route   POST /api/blogs
@@ -27,8 +28,11 @@ export const createBlog = async (req, res) => {
       title,
       description,
       image: imageUrl,
-      author: req.user._id
+      author: req.user._id,
     });
+
+    // Broadcast the new blog post
+    broadcastNewPost(blog);
 
     res.status(201).json(blog);
   } catch (error) {

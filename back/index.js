@@ -7,6 +7,7 @@ import connectDB from './config/db.js';
 import userRoutes from './routes/userRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import fs from 'fs';
+import { WebSocketServer } from 'ws'; // Import WebSocketServer
 
 // Load env vars
 dotenv.config();
@@ -46,6 +47,39 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message || 'Something went wrong!' });
 });
 
-app.listen(PORT, () => {
+// Start HTTP server
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// WebSocket setup
+const wss = new WebSocketServer({ server }); // Attach WebSocket server to the HTTP server
+
+wss.on('connection', (ws) => {
+  console.log('New WebSocket connection established');
+
+  // Handle incoming messages
+  ws.on('message', (message) => {
+    console.log('Received:', message);
+    // Broadcast the message to all connected clients
+    wss.clients.forEach((client) => {
+      if (client.readyState === ws.OPEN) {
+        client.send(message);
+      }
+    });
+  });
+
+  // Handle connection close
+  ws.on('close', () => {
+    console.log('WebSocket connection closed');
+  });
+});
+
+// Broadcast new blog posts
+export const broadcastNewPost = (post) => {
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({ type: 'NEW_POST', payload: post }));
+    }
+  });
+};
